@@ -272,19 +272,54 @@
             <div class="lg:col-span-2 space-y-6">
                 <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-2xl font-bold">📈 Graphique de Trading</h2>
-                        <div class="text-sm text-gray-400">
-                            <span id="chartCrypto">BTC</span>/USDT
+                        <div>
+                            <h2 class="text-2xl font-bold">📈 Graphique de Trading</h2>
+                            <p class="text-sm text-gray-400 mt-1">
+                                <span id="chartCrypto">BTC</span>/USDT • 
+                                <span class="text-green-400">▲ EMA20</span> • 
+                                <span class="text-red-400">▲ EMA50</span> • 
+                                <span class="text-purple-400">RSI (axe droit)</span>
+                            </p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm text-gray-400">Points de trading</div>
+                            <div class="flex gap-3 mt-1">
+                                <span class="text-green-400">🔺 Achats</span>
+                                <span class="text-red-400">🔻 Ventes</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="h-64">
+                    <div class="h-96">
                         <canvas id="tradingChart"></canvas>
+                    </div>
+                    <div class="mt-4 grid grid-cols-4 gap-3">
+                        <div class="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                            <p class="text-xs text-gray-400">Prix Actuel</p>
+                            <p class="text-lg font-bold text-blue-400">$<span id="livePrice">0</span></p>
+                        </div>
+                        <div class="p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                            <p class="text-xs text-gray-400">RSI</p>
+                            <p class="text-lg font-bold text-purple-400"><span id="liveRSI">50</span></p>
+                        </div>
+                        <div class="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                            <p class="text-xs text-gray-400">EMA 20</p>
+                            <p class="text-lg font-bold text-yellow-400">$<span id="liveEMA20">0</span></p>
+                        </div>
+                        <div class="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                            <p class="text-xs text-gray-400">EMA 50</p>
+                            <p class="text-lg font-bold text-red-400">$<span id="liveEMA50">0</span></p>
+                        </div>
                     </div>
                 </div>
 
                 <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6">
-                    <h2 class="text-2xl font-bold mb-4">Stratégies Optimisées</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="strategiesGrid"></div>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-bold">🎯 Stratégies Optimisées</h2>
+                        <div class="text-sm text-gray-400">
+                            Sélectionnez votre style de trading
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="strategiesGrid"></div>
                 </div>
 
                 <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6">
@@ -916,31 +951,209 @@
                 type: 'line',
                 data: {
                     labels: [],
-                    datasets: [{
-                        label: 'Prix',
-                        data: [],
-                        borderColor: 'rgb(59, 130, 246)',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        tension: 0.4
-                    }]
+                    datasets: [
+                        {
+                            label: 'Prix',
+                            data: [],
+                            borderColor: 'rgb(59, 130, 246)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'EMA 20',
+                            data: [],
+                            borderColor: 'rgb(250, 204, 21)',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'EMA 50',
+                            data: [],
+                            borderColor: 'rgb(239, 68, 68)',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'RSI',
+                            data: [],
+                            borderColor: 'rgb(168, 85, 247)',
+                            backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            yAxisID: 'y1'
+                        },
+                        {
+                            label: 'Achats',
+                            data: [],
+                            backgroundColor: 'rgb(34, 197, 94)',
+                            borderColor: 'rgb(34, 197, 94)',
+                            pointRadius: 8,
+                            pointStyle: 'triangle',
+                            showLine: false,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Ventes',
+                            data: [],
+                            backgroundColor: 'rgb(239, 68, 68)',
+                            borderColor: 'rgb(239, 68, 68)',
+                            pointRadius: 8,
+                            pointStyle: 'triangle',
+                            rotation: 180,
+                            showLine: false,
+                            yAxisID: 'y'
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            ticks: {
+                                color: 'rgb(156, 163, 175)',
+                                callback: function(value) {
+                                    return '$' + value.toFixed(2);
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(75, 85, 99, 0.3)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            min: 0,
+                            max: 100,
+                            ticks: {
+                                color: 'rgb(168, 85, 247)',
+                                callback: function(value) {
+                                    return value.toFixed(0);
+                                }
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        },
+                        x: {
+                            ticks: {
+                                color: 'rgb(156, 163, 175)',
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
+                            grid: {
+                                color: 'rgba(75, 85, 99, 0.3)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: 'rgb(229, 231, 235)',
+                                usePointStyle: true,
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                            titleColor: 'rgb(229, 231, 235)',
+                            bodyColor: 'rgb(229, 231, 235)',
+                            borderColor: 'rgb(75, 85, 99)',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        if (context.datasetIndex <= 2) {
+                                            label += '$' + context.parsed.y.toFixed(2);
+                                        } else if (context.datasetIndex === 3) {
+                                            label += context.parsed.y.toFixed(2);
+                                        } else {
+                                            label += '$' + context.parsed.y.toFixed(2);
+                                        }
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
                 }
             });
         }
 
         function renderStrategies() {
-            document.getElementById('strategiesGrid').innerHTML = Object.entries(strategies).map(([key, s]) => `
-                <div onclick="selectStrategy('${key}')" class="p-4 rounded-lg border-2 ${state.selectedStrategy === key ? 'border-yellow-400 bg-yellow-400/10' : 'border-slate-600'} cursor-pointer hover:border-yellow-300 transition-all">
-                    <h3 class="font-bold mb-2">${s.name}</h3>
-                    <p class="text-gray-400 text-sm mb-2">${s.description}</p>
-                    <div class="text-xs text-gray-500">
-                        <p>TP: ${s.takeProfit}% • Min: ${s.minProfit}%</p>
+            document.getElementById('strategiesGrid').innerHTML = Object.entries(strategies).map(([key, s]) => {
+                const isSelected = state.selectedStrategy === key;
+                const borderColor = isSelected ? 'border-yellow-400' : 'border-slate-600';
+                const bgColor = isSelected ? 'bg-yellow-400/10' : 'bg-slate-700/30';
+                
+                return `
+                <div onclick="selectStrategy('${key}')" class="p-5 rounded-xl border-2 ${borderColor} ${bgColor} cursor-pointer hover:border-yellow-300 transition-all shadow-lg hover:shadow-xl relative overflow-hidden">
+                    ${isSelected ? '<div class="absolute top-2 right-2"><span class="text-2xl">✓</span></div>' : ''}
+                    
+                    <div class="mb-3">
+                        <h3 class="font-bold text-lg mb-1">${s.name}</h3>
+                        <p class="text-gray-400 text-sm">${s.description}</p>
                     </div>
+                    
+                    <div class="space-y-2 text-xs">
+                        <div class="flex justify-between items-center p-2 bg-green-500/10 rounded">
+                            <span class="text-gray-300">💰 Take Profit</span>
+                            <span class="font-bold text-green-400">${s.takeProfit}%</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center p-2 bg-blue-500/10 rounded">
+                            <span class="text-gray-300">🎯 Profit Min</span>
+                            <span class="font-bold text-blue-400">${s.minProfit}%</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center p-2 bg-purple-500/10 rounded">
+                            <span class="text-gray-300">📊 RSI Achat</span>
+                            <span class="font-bold text-purple-400">&lt; ${s.rsiBuyThreshold}</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center p-2 bg-orange-500/10 rounded">
+                            <span class="text-gray-300">📈 RSI Vente</span>
+                            <span class="font-bold text-orange-400">&gt; ${s.rsiSellThreshold}</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center p-2 bg-red-500/10 rounded">
+                            <span class="text-gray-300">🛡️ Stop Loss</span>
+                            <span class="font-bold text-red-400">${s.stopLoss}%</span>
+                        </div>
+                    </div>
+                    
+                    ${isSelected ? `
+                        <div class="mt-3 p-2 bg-yellow-400/20 border border-yellow-400/50 rounded-lg">
+                            <p class="text-xs text-yellow-200 text-center font-semibold">
+                                ✨ Stratégie Active
+                            </p>
+                        </div>
+                    ` : ''}
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         function selectStrategy(key) {
@@ -1160,9 +1373,107 @@
                 return time.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             });
             
+            // Calculer EMA 20
+            const ema20 = calculateEMA(prices, 20);
+            
+            // Calculer EMA 50 (si assez de données)
+            const ema50 = prices.length >= 50 ? calculateEMA(prices, 50) : new Array(prices.length).fill(null);
+            
+            // Calculer RSI pour chaque point
+            const rsiValues = [];
+            for (let i = 14; i < prices.length; i++) {
+                const subset = prices.slice(0, i + 1);
+                rsiValues.push(calculateRSI(subset, 14));
+            }
+            // Remplir les premières valeurs avec null
+            while (rsiValues.length < prices.length) {
+                rsiValues.unshift(null);
+            }
+            
+            // Marquer les points d'achat et de vente
+            const buyPoints = new Array(prices.length).fill(null);
+            const sellPoints = new Array(prices.length).fill(null);
+            
+            // Parcourir les trades récents et marquer sur le graphique
+            state.trades.slice(0, 10).forEach(trade => {
+                const tradeTime = trade.time;
+                const labelIndex = labels.findIndex(label => {
+                    const labelTime = label.split(':').join('');
+                    const tradeTimeFormatted = tradeTime.split(':').join('');
+                    return Math.abs(parseInt(labelTime) - parseInt(tradeTimeFormatted)) < 5;
+                });
+                
+                if (labelIndex !== -1) {
+                    if (trade.type === 'BUY') {
+                        buyPoints[labelIndex] = parseFloat(trade.entryPrice);
+                    } else {
+                        sellPoints[labelIndex] = parseFloat(trade.entryPrice);
+                    }
+                }
+            });
+            
             tradingChart.data.labels = labels;
             tradingChart.data.datasets[0].data = prices;
+            tradingChart.data.datasets[1].data = ema20;
+            tradingChart.data.datasets[2].data = ema50;
+            tradingChart.data.datasets[3].data = rsiValues;
+            tradingChart.data.datasets[4].data = buyPoints;
+            tradingChart.data.datasets[5].data = sellPoints;
+            
             tradingChart.update('none');
+            
+            // Mettre à jour les indicateurs live
+            const currentPrice = prices[prices.length - 1];
+            const currentRSI = rsiValues[rsiValues.length - 1];
+            const currentEMA20 = ema20[ema20.length - 1];
+            const currentEMA50 = ema50[ema50.length - 1];
+            
+            if (document.getElementById('livePrice')) {
+                document.getElementById('livePrice').textContent = currentPrice ? currentPrice.toFixed(2) : '0';
+            }
+            if (document.getElementById('liveRSI')) {
+                const rsiElement = document.getElementById('liveRSI');
+                rsiElement.textContent = currentRSI ? currentRSI.toFixed(2) : '50';
+                // Changer la couleur selon le RSI
+                if (currentRSI < 30) {
+                    rsiElement.className = 'text-green-400';
+                } else if (currentRSI > 70) {
+                    rsiElement.className = 'text-red-400';
+                } else {
+                    rsiElement.className = 'text-purple-400';
+                }
+            }
+            if (document.getElementById('liveEMA20')) {
+                document.getElementById('liveEMA20').textContent = currentEMA20 ? currentEMA20.toFixed(2) : '0';
+            }
+            if (document.getElementById('liveEMA50')) {
+                document.getElementById('liveEMA50').textContent = currentEMA50 ? currentEMA50.toFixed(2) : '0';
+            }
+        }
+        
+        function calculateEMA(prices, period) {
+            const ema = [];
+            const multiplier = 2 / (period + 1);
+            
+            // Première valeur EMA = SMA
+            let sma = 0;
+            for (let i = 0; i < Math.min(period, prices.length); i++) {
+                sma += prices[i];
+            }
+            sma = sma / Math.min(period, prices.length);
+            ema.push(sma);
+            
+            // Calculer EMA pour le reste
+            for (let i = 1; i < prices.length; i++) {
+                if (i < period) {
+                    ema.push(null);
+                } else {
+                    const value = (prices[i] - ema[ema.length - 1]) * multiplier + ema[ema.length - 1];
+                    ema.push(value);
+                }
+            }
+            
+            return ema;
         }
 
         function togglePrivateKeyVisibility() {
