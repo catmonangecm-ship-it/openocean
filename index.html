@@ -1,0 +1,1839 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Trading Multi-Crypto Pro - OpenOcean Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(to bottom right, #0f172a, #581c87, #0f172a);
+            min-height: 100vh;
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        .telegram-gradient {
+            background: linear-gradient(135deg, #0088cc, #00bcd4);
+        }
+        .openocean-gradient {
+            background: linear-gradient(135deg, #00d4ff, #0088ff);
+        }
+    </style>
+</head>
+<body class="text-white p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
+                    Bot Trading Multi-Crypto Pro
+                </h1>
+                <p class="text-gray-400 mt-2">🌊 Powered by OpenOcean • Meilleurs prix DEX • Trading optimisé 24/7</p>
+            </div>
+            
+            <div class="flex gap-3">
+                <button onclick="openTelegramChannel()" class="flex items-center gap-2 px-4 py-3 telegram-gradient hover:opacity-90 rounded-lg font-semibold transition-all shadow-lg">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.295-.6.295-.002 0-.003 0-.005 0l.213-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.941z"/>
+                    </svg>
+                    <span>Canal Telegram</span>
+                    <span class="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full pulse">LIVE</span>
+                </button>
+                
+                <button onclick="openChat()" class="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 rounded-lg font-semibold transition-all">
+                    <span>💬</span>
+                    Chat Live
+                </button>
+                
+                <button onclick="openDCASwap()" class="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-lg font-semibold transition-all">
+                    <span>🔄</span>
+                    DCA/Swap
+                    <span>↗</span>
+                </button>
+                
+                <button onclick="connectWallet()" id="connectBtn" class="flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600">
+                    <span>👛</span>
+                    <span id="walletText">Connecter MetaMask</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- OpenOcean Info Banner -->
+        <div class="bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border-2 border-blue-400 rounded-xl p-4 mb-6">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl">🌊</span>
+                <div>
+                    <h3 class="text-lg font-bold text-blue-300">OpenOcean Agrégateur DEX</h3>
+                    <p class="text-sm text-gray-300">Meilleurs prix sur 20+ DEX • Slippage optimisé • Gas fees réduits</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="subscriptionSection" class="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-2 border-purple-500 rounded-xl p-6 mb-6 hidden">
+            <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                <span>💎</span>
+                Abonnement Bot Trading Pro
+            </h3>
+            
+            <div id="freeTrialInfo" class="bg-green-500/20 border border-green-500 rounded-lg p-4 mb-4">
+                <p class="text-green-300 font-bold mb-2">🎁 OFFRE DE LANCEMENT</p>
+                <p class="text-sm text-green-200">
+                    ✅ 2 jours GRATUITS pour tester le bot<br>
+                    ✅ Toutes les fonctionnalités incluses<br>
+                    ✅ Trading réel + Simulation<br>
+                    <span id="trialDaysRemaining" class="font-bold text-green-400"></span>
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div class="bg-slate-700/50 border-2 border-slate-600 rounded-lg p-4 hover:border-purple-400 transition-all cursor-pointer" onclick="selectPlan(1, 1)">
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-purple-400">1 USDT</p>
+                        <p class="text-sm text-gray-400 mt-1">1 jour</p>
+                        <p class="text-xs text-gray-500 mt-2">Essai simple</p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-700/50 border-2 border-purple-500 rounded-lg p-4 hover:border-purple-400 transition-all cursor-pointer relative" onclick="selectPlan(7, 6)">
+                    <div class="absolute -top-3 -right-3 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-full">
+                        -14%
+                    </div>
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-purple-400">6 USDT</p>
+                        <p class="text-sm text-gray-400 mt-1">7 jours</p>
+                        <p class="text-xs text-gray-500 mt-2">0.86 USDT/jour</p>
+                        <p class="text-xs text-green-400 mt-1">⭐ Populaire</p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-700/50 border-2 border-yellow-500 rounded-lg p-4 hover:border-purple-400 transition-all cursor-pointer relative" onclick="selectPlan(30, 20)">
+                    <div class="absolute -top-3 -right-3 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-full">
+                        -33%
+                    </div>
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-yellow-400">20 USDT</p>
+                        <p class="text-sm text-gray-400 mt-1">30 jours</p>
+                        <p class="text-xs text-gray-500 mt-2">0.67 USDT/jour</p>
+                        <p class="text-xs text-yellow-400 mt-1">🏆 Meilleure valeur</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="selectedPlanInfo" class="bg-blue-500/20 border border-blue-500 rounded-lg p-4 mb-4 hidden">
+                <p class="text-blue-300 font-bold mb-2">📋 Forfait sélectionné</p>
+                <p class="text-sm text-blue-200">
+                    <span id="planDuration"></span> jours pour <span id="planPrice"></span> USDT
+                </p>
+            </div>
+
+            <button onclick="processPayment()" id="paymentBtn" class="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-lg font-bold text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <span>💳</span>
+                <span id="paymentBtnText">Sélectionnez un forfait</span>
+            </button>
+
+            <div class="mt-4 p-3 bg-slate-700/50 rounded-lg">
+                <p class="text-xs text-gray-400 text-center">
+                    🔒 Paiement sécurisé via BSC • Pas de données bancaires requises
+                </p>
+            </div>
+        </div>
+
+        <div id="cryptoSelector" class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 mb-6 hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Sélectionner la Crypto</h3>
+                <button onclick="fetchCryptoList()" id="refreshBtn" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-all">
+                    <span id="refreshIcon">🔄</span>
+                    <span id="refreshText">Actualiser</span>
+                </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Cryptomonnaie <span id="cryptoCount"></span></label>
+                    <select id="cryptoSelect" onchange="changeCrypto()" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 focus:outline-none focus:border-yellow-400 text-lg font-semibold cursor-pointer">
+                        <option>Chargement...</option>
+                    </select>
+                    <p class="text-xs text-gray-400 mt-2">🌊 = Trading OpenOcean OK • 🎮 = Simulation</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Mode de Trading</label>
+                    <select id="tradingMode" onchange="changeTradingMode()" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 focus:outline-none focus:border-yellow-400 text-lg font-semibold cursor-pointer">
+                        <option value="simulation">🎮 Simulation</option>
+                        <option value="real">🌊 Réel (OpenOcean)</option>
+                    </select>
+                    <p class="text-xs text-gray-400 mt-2" id="modeInfo">⚠️ Activez uniquement si vous comprenez les risques</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="privateKeySection" class="bg-gradient-to-r from-red-500/20 to-orange-500/20 border-2 border-red-500 rounded-xl p-6 mb-6 hidden">
+            <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                <span>🔐</span>
+                Trading Automatique 24/7 (Optionnel)
+            </h3>
+            
+            <div class="bg-red-900/30 border border-red-500 rounded-lg p-4 mb-4">
+                <p class="text-red-300 font-bold mb-2">⚠️ AVERTISSEMENTS CRITIQUES</p>
+                <ul class="text-sm text-red-200 space-y-1">
+                    <li>• Utilisez UNIQUEMENT un wallet dédié avec petit capital</li>
+                    <li>• Votre clé privée ne sera JAMAIS sauvegardée</li>
+                    <li>• Stockée uniquement en mémoire pendant la session</li>
+                    <li>• Effacée automatiquement à la fermeture de l'onglet</li>
+                    <li>• Laissez vide pour utiliser MetaMask (manuel)</li>
+                    <li>• <strong>MODE 24/7: Gardez l'onglet ouvert et l'écran allumé</strong></li>
+                </ul>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Clé Privée (pour trading automatique sans confirmation)</label>
+                    <input type="password" id="privateKeyInput" placeholder="0x... ou laisser vide pour MetaMask" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 focus:outline-none focus:border-red-400">
+                    <p class="text-xs text-gray-400 mt-1">
+                        <span class="text-yellow-400">⚡</span> Vide = Mode manuel (MetaMask) | Rempli = Mode automatique 24/7
+                    </p>
+                </div>
+                
+                <button onclick="togglePrivateKeyVisibility()" class="text-sm text-blue-400 hover:underline">
+                    👁️ Afficher/Masquer la clé
+                </button>
+            </div>
+        </div>
+
+        <div id="capitalSection" class="bg-gradient-to-r from-yellow-400/20 to-orange-500/20 border-2 border-yellow-400 rounded-xl p-6 mb-6 hidden">
+            <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                <span>🎯</span>
+                Capital de trading en USDT
+            </h3>
+            <p class="text-gray-300 mb-4">
+                Montant en USDT pour le trading automatique
+                <br />
+                <span class="text-sm text-gray-400">Solde disponible: <span id="availableBalance" class="font-bold text-green-400">0</span> USDT</span>
+            </p>
+            <div class="flex gap-4 mb-3">
+                <input type="number" id="capitalInput" placeholder="Ex: 50" step="10" class="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 focus:outline-none focus:border-yellow-400">
+                <button onclick="setCapital()" class="px-8 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 rounded-lg font-semibold transition-all">
+                    Valider
+                </button>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="setMaxCapital()" class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm transition-all">
+                    💯 Utiliser 100%
+                </button>
+                <button onclick="setHalfCapital()" class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm transition-all">
+                    ➗ Utiliser 50%
+                </button>
+                <button onclick="syncWalletBalance()" class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm transition-all">
+                    🔄 Actualiser
+                </button>
+            </div>
+        </div>
+
+        <div id="statsCards" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 hidden">
+            <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-4">
+                <p class="text-gray-400 text-xs">Capital</p>
+                <p class="text-xl font-bold mt-1 text-green-400">$<span id="capitalDisplay">0</span></p>
+            </div>
+            
+            <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-4">
+                <p class="text-gray-400 text-xs">Prix <span id="cryptoName">BTC</span></p>
+                <p class="text-xl font-bold mt-1">$<span id="currentPrice">...</span></p>
+            </div>
+            
+            <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-4">
+                <p class="text-gray-400 text-xs">Profit</p>
+                <p class="text-xl font-bold mt-1 text-green-400">$<span id="profitDisplay">0.00</span></p>
+            </div>
+            
+            <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-4">
+                <p class="text-gray-400 text-xs">Mode</p>
+                <p class="text-xl font-bold mt-1" id="modeDisplay">🎮 SIM</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-bold">📈 Graphique de Trading</h2>
+                        <div class="text-sm text-gray-400">
+                            <span id="chartCrypto">BTC</span>/USDT
+                        </div>
+                    </div>
+                    <div class="h-64">
+                        <canvas id="tradingChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6">
+                    <h2 class="text-2xl font-bold mb-4">Stratégies Optimisées</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="strategiesGrid"></div>
+                </div>
+
+                <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-bold">Historique des Trades</h2>
+                        <button onclick="toggleBot()" id="toggleBotBtn" disabled class="flex items-center gap-2 px-6 py-2 rounded-lg font-semibold transition-all bg-gray-600 cursor-not-allowed">
+                            <span id="botIcon">▶️</span>
+                            <span id="botText">Démarrer</span>
+                        </button>
+                    </div>
+                    <div id="tradesContainer">
+                        <div class="text-center py-8 text-gray-400">
+                            <span class="text-4xl">⚠️</span>
+                            <p>Aucun trade</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6">
+                <h2 class="text-2xl font-bold mb-4">Paramètres</h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">% par trade</label>
+                        <input type="number" id="tradePercent" value="10" min="1" max="100" onchange="updateTradeAmount()" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-400">
+                        <p class="text-xs text-gray-400 mt-1">Montant: $<span id="tradeAmount">0</span></p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Slippage (%)</label>
+                        <input type="number" id="slippage" value="1" step="0.1" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-400">
+                        <p class="text-xs text-gray-400 mt-1">🌊 OpenOcean optimise automatiquement</p>
+                    </div>
+
+                    <div class="p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="text-purple-400">🎯</span>
+                                <p class="font-semibold text-purple-400">Stop Suiveur Intelligent</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="trailingStopToggle" checked class="sr-only peer" onchange="toggleTrailingStop()">
+                                <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                        </div>
+                        <div id="trailingStopSettings">
+                            <div class="space-y-2">
+                                <div>
+                                    <label class="block text-xs text-gray-400 mb-1">Activation (% profit)</label>
+                                    <input type="number" id="trailingActivation" value="2.0" step="0.5" min="1.0" max="10" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-400">
+                                    <p class="text-xs text-gray-500 mt-1">Active après ce profit</p>
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-400 mb-1">Trailing (%)</label>
+                                    <input type="number" id="trailingPercent" value="1.5" step="0.25" min="0.5" max="5" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-400">
+                                    <p class="text-xs text-gray-500 mt-1">Vente si baisse de ce %</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Paramètres de Take Profit Améliorés -->
+                    <div class="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="text-green-400">💰</span>
+                            <p class="font-semibold text-green-400">Take Profit Optimisé</p>
+                        </div>
+                        <div class="space-y-2">
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Profit Minimum (%)</label>
+                                <input type="number" id="minProfitTarget" value="3.0" step="0.5" min="1" max="20" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-400">
+                                <p class="text-xs text-gray-500 mt-1">Profit minimum avant vente</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Profit Cible (%)</label>
+                                <input type="number" id="targetProfit" value="5.0" step="0.5" min="2" max="30" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-400">
+                                <p class="text-xs text-gray-500 mt-1">Vente automatique à ce profit</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Détection de Dump -->
+                    <div class="p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="text-orange-400">📉</span>
+                                <p class="font-semibold text-orange-400">Achat après Dump</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="dumpBuyToggle" checked class="sr-only peer" onchange="toggleDumpBuy()">
+                                <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+                            </label>
+                        </div>
+                        <div id="dumpBuySettings">
+                            <div class="space-y-2">
+                                <div>
+                                    <label class="block text-xs text-gray-400 mb-1">Dump Minimum (%)</label>
+                                    <input type="number" id="dumpThreshold" value="5.0" step="0.5" min="2" max="20" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400">
+                                    <p class="text-xs text-gray-500 mt-1">Baisse pour déclencher</p>
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-400 mb-1">Durée (minutes)</label>
+                                    <input type="number" id="dumpDuration" value="5" step="1" min="1" max="30" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400">
+                                    <p class="text-xs text-gray-500 mt-1">Fenêtre de temps</p>
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-400 mb-1">Délai achat (sec)</label>
+                                    <input type="number" id="dumpBuyDelay" value="30" step="10" min="10" max="300" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400">
+                                    <p class="text-xs text-gray-500 mt-1">Attente après dump</p>
+                                </div>
+                            </div>
+                            <div class="mt-3 p-2 bg-orange-900/30 rounded">
+                                <p class="text-xs text-orange-200">
+                                    💡 Achat auto si baisse ≥ 5% en 5 min
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 p-4 bg-green-400/10 border border-green-400/30 rounded-lg">
+                    <div class="flex gap-2">
+                        <span class="text-green-400">💰</span>
+                        <div class="text-sm text-gray-300">
+                            <p class="font-semibold text-green-400">Soldes</p>
+                            <p>BNB: <span id="bnbBalance">0</span></p>
+                            <p>USDT: $<span id="usdtBalance">0</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 p-4 bg-blue-400/10 border border-blue-400/30 rounded-lg">
+                    <div class="flex gap-2">
+                        <span class="text-blue-400">📊</span>
+                        <div class="text-sm text-gray-300">
+                            <p class="font-semibold text-blue-400">Statut</p>
+                            <p>Wallet: <span id="walletStatus">🔴 Non connecté</span></p>
+                            <p>Mode: <span id="tradingTypeStatus">🟡 ...</span></p>
+                            <p>Position: <span id="positionStatus">⚪ Aucune</span></p>
+                            <p>DEX: <span id="dexStatus">🌊 OpenOcean</span></p>
+                            <p>API: <span id="apiStatus">🟡 ...</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 p-4 bg-yellow-400/10 border border-yellow-400/30 rounded-lg">
+                    <div class="flex gap-2">
+                        <span class="text-yellow-400">🚀</span>
+                        <div class="text-xs text-gray-300">
+                            <p class="font-semibold text-yellow-400">STRATÉGIE AMÉLIORÉE</p>
+                            <p>• Profit minimum: 3%</p>
+                            <p>• Cible optimale: 5%</p>
+                            <p>• RSI Vente: 75-85</p>
+                            <p>• Stop suiveur intelligent</p>
+                            <p>• Achat après dump ≥5%</p>
+                            <p>• OpenOcean pour meilleurs prix</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 p-4 bg-red-400/10 border border-red-400/30 rounded-lg">
+                    <div class="flex gap-2">
+                        <span class="text-red-400">⚠️</span>
+                        <div class="text-xs text-gray-300">
+                            <p class="font-semibold text-red-400">ATTENTION</p>
+                            <p>• Risque de perte totale</p>
+                            <p>• Frais gas + slippage</p>
+                            <p>• Minimum 0.01 BNB pour gas</p>
+                            <p>• Commencez petit (10-50$)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Chat Communautaire -->
+    <div id="chatModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" style="z-index: 9999;">
+        <div class="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl h-[600px] flex flex-col border-2 border-purple-500/30">
+            <div class="flex justify-between items-center p-6 border-b border-slate-700">
+                <div>
+                    <h2 class="text-2xl font-bold bg-gradient-to-r from-green-400 to-teal-400 bg-clip-text text-transparent">
+                        💬 Chat Communautaire Live
+                    </h2>
+                    <p class="text-sm text-gray-400 mt-1">
+                        <span id="onlineCount" class="text-green-400">●</span> 
+                        <span id="onlineUsers">...</span> membres en ligne
+                    </p>
+                </div>
+                <button onclick="closeChat()" class="text-gray-400 hover:text-white transition-all text-2xl hover:bg-red-500/20 rounded-lg px-3 py-1">✕</button>
+            </div>
+
+            <div id="chatMessages" class="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-900/50">
+                <div class="text-center text-gray-500 py-8">
+                    <p>💬 Chargement des messages...</p>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-700 bg-slate-900">
+                <div class="flex gap-3">
+                    <input 
+                        type="text" 
+                        id="chatInput" 
+                        placeholder="Tapez votre message..."
+                        class="flex-1 bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-3 focus:outline-none focus:border-green-400 text-white placeholder-gray-400"
+                        onkeypress="if(event.key === 'Enter') sendMessage()"
+                    >
+                    <button onclick="sendMessage()" class="px-6 py-3 bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 rounded-lg font-semibold transition-all">
+                        Envoyer 📤
+                    </button>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">
+                    💡 Partagez vos stratégies et analyses avec la communauté
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // OpenOcean Exchange Proxy sur BSC
+        const OPENOCEAN_EXCHANGE = '0x6352a56caadC4F1E25CD6c75970Fa768A3304e64';
+        const USDT_CONTRACT = '0x55d398326f99059fF775485246999027B3197955';
+        const BSC_RPC = 'https://bsc-dataseed1.binance.org';
+        
+        const OWNER_WALLET = '0x5959f13ad996ab184780a778cf6d594786f44250';
+        const FREE_WALLET = '0xb44dd82c004a767d23b890f788fd6f9b13fcf6a4';
+        const FREE_TRIAL_DAYS = 2;
+
+        const TELEGRAM_CONFIG = {
+            channelUrl: 'https://t.me/crypto_trading_signals_pro',
+            botUrl: 'https://t.me/CryptoTradingProBot'
+        };
+
+        let state = {
+            account: null, 
+            isConnected: false, 
+            balanceBNB: '0', 
+            balanceUSDT: '0',
+            selectedCrypto: 'BTCUSDT', 
+            cryptoList: [], 
+            currentPrice: null, 
+            priceHistory: [],
+            tradingCapital: 0, 
+            capitalSet: false, 
+            tradingMode: 'simulation',
+            botRunning: false, 
+            trades: [], 
+            portfolio: { profit: 0, profitPercent: 0 },
+            indicators: { rsi: 50, macd: { histogram: 0 }, ema20: 0, ema50: 0 },
+            selectedStrategy: 'scalping_pro', 
+            provider: null,
+            privateKey: null,
+            wallet: null,
+            autoMode: false,
+            currentPosition: null,
+            lastBuyPrice: 0,
+            positionAmount: 0,
+            lastSellTime: 0,
+            lastBuyTime: 0,
+            positionSold: false,
+            chartData: { labels: [], prices: [], buyPoints: [], sellPoints: [] },
+            subscription: {
+                isActive: false,
+                expiryDate: null,
+                firstAccessDate: null,
+                selectedPlan: null
+            },
+            priceMonitoring: {
+                highestPrice: 0,
+                highestPriceTime: 0,
+                isDropping: false,
+                dropStartTime: 0
+            },
+            trailingStop: {
+                enabled: true,
+                highestPriceInPosition: 0,
+                trailingPercent: 1.5,
+                activationProfit: 2.0
+            },
+            profitTargets: {
+                minProfit: 3.0,
+                targetProfit: 5.0
+            },
+            dumpDetection: {
+                enabled: true,
+                threshold: 5.0,      // % de baisse
+                duration: 5 * 60000, // 5 minutes en ms
+                buyDelay: 30000,     // 30 secondes après dump
+                recentPrices: [],    // Historique court pour dump
+                lastDumpTime: 0,
+                dumpDetected: false,
+                dumpBuyScheduled: false
+            }
+        };
+
+        let ws = null, botInterval = null, lastTradeTime = 0;
+        let tradingChart = null;
+        
+        let chatMessages = [];
+        let chatUsername = '';
+
+        const POST_SELL_COOLDOWN = 120000;
+        const MIN_TRADE_INTERVAL = 60000;
+        const MIN_BUY_TO_SELL_INTERVAL = 180000;
+        const PRICE_DROP_WAIT_TIME = 600000;
+        const MIN_DROP_PERCENTAGE = 0.5;
+
+        const TOKEN_ADDRESSES = {
+            'BTCUSDT': '0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c',
+            'ETHUSDT': '0x2170Ed0880ac9A755fd29B2688956BD959F933F8',
+            'BNBUSDT': '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c'
+        };
+
+        // Stratégies améliorées avec meilleurs take profit
+        const strategies = {
+            scalping_pro: { 
+                name: '⚡ Scalping Pro', 
+                description: 'Rapide RSI - Profit 3-5%', 
+                minTradeInterval: 180000,
+                rsiBuyThreshold: 35,
+                rsiBuyStrong: 25,
+                rsiSellThreshold: 75,
+                rsiSellStrong: 85,
+                takeProfit: 5.0,
+                minProfit: 3.0,
+                stopLoss: -2.0
+            },
+            swing_advanced: { 
+                name: '🎯 Swing Avancé', 
+                description: 'Positions moyennes - Profit 5-8%', 
+                minTradeInterval: 900000,
+                rsiBuyThreshold: 30,
+                rsiBuyStrong: 20,
+                rsiSellThreshold: 80,
+                rsiSellStrong: 90,
+                takeProfit: 8.0,
+                minProfit: 5.0,
+                stopLoss: -3.0
+            },
+            momentum: {
+                name: '🚀 Momentum',
+                description: 'Tendances fortes - Profit 6-10%',
+                minTradeInterval: 600000,
+                rsiBuyThreshold: 40,
+                rsiBuyStrong: 30,
+                rsiSellThreshold: 85,
+                rsiSellStrong: 95,
+                takeProfit: 10.0,
+                minProfit: 6.0,
+                stopLoss: -2.5
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Bot chargé - Version OPENOCEAN OPTIMISÉE');
+            console.log('🌊 DEX: OpenOcean (meilleurs prix)');
+            console.log('💰 Profit minimum: 3%');
+            console.log('🎯 Profit cible: 5%');
+            console.log('📈 RSI Vente: 75-85');
+            console.log('📉 Achat auto après dump ≥5% en 5 min');
+            
+            if (typeof ethers !== 'undefined') {
+                document.getElementById('ethersStatus').innerHTML = '🟢 v' + ethers.version;
+            }
+            
+            initChart();
+            renderStrategies();
+            
+            if (window.ethereum && window.ethereum.selectedAddress) {
+                connectWallet();
+            }
+
+            // Event listeners pour les paramètres de profit
+            document.getElementById('minProfitTarget').addEventListener('change', (e) => {
+                state.profitTargets.minProfit = parseFloat(e.target.value);
+                console.log(`💰 Profit minimum: ${state.profitTargets.minProfit}%`);
+            });
+
+            document.getElementById('targetProfit').addEventListener('change', (e) => {
+                state.profitTargets.targetProfit = parseFloat(e.target.value);
+                console.log(`🎯 Profit cible: ${state.profitTargets.targetProfit}%`);
+            });
+
+            document.getElementById('trailingActivation').addEventListener('change', (e) => {
+                state.trailingStop.activationProfit = parseFloat(e.target.value);
+                console.log(`🎯 Stop suiveur - Activation: ${state.trailingStop.activationProfit}%`);
+            });
+
+            document.getElementById('trailingPercent').addEventListener('change', (e) => {
+                state.trailingStop.trailingPercent = parseFloat(e.target.value);
+                console.log(`🎯 Stop suiveur - Trailing: ${state.trailingStop.trailingPercent}%`);
+            });
+
+            // Event listeners pour la détection de dump
+            document.getElementById('dumpThreshold').addEventListener('change', (e) => {
+                state.dumpDetection.threshold = parseFloat(e.target.value);
+                console.log(`📉 Dump threshold: ${state.dumpDetection.threshold}%`);
+            });
+
+            document.getElementById('dumpDuration').addEventListener('change', (e) => {
+                state.dumpDetection.duration = parseFloat(e.target.value) * 60000;
+                console.log(`📉 Dump durée: ${e.target.value} min`);
+            });
+
+            document.getElementById('dumpBuyDelay').addEventListener('change', (e) => {
+                state.dumpDetection.buyDelay = parseFloat(e.target.value) * 1000;
+                console.log(`📉 Dump délai achat: ${e.target.value}s`);
+            });
+        });
+
+        async function connectWallet() {
+            if (!window.ethereum) {
+                alert('❌ MetaMask non installé\n\nVeuillez installer MetaMask pour continuer.');
+                return;
+            }
+
+            try {
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                
+                if (chainId !== '0x38') {
+                    try {
+                        await window.ethereum.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [{
+                                chainId: '0x38',
+                                chainName: 'BNB Smart Chain',
+                                nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
+                                rpcUrls: [BSC_RPC],
+                                blockExplorerUrls: ['https://bscscan.com']
+                            }]
+                        });
+                    } catch (switchError) {
+                        console.error('Erreur changement réseau:', switchError);
+                    }
+                }
+                
+                state.account = accounts[0];
+                state.provider = new ethers.providers.Web3Provider(window.ethereum);
+                state.isConnected = true;
+                
+                console.log('✅ Wallet connecté:', state.account);
+                console.log('🌊 OpenOcean Exchange:', OPENOCEAN_EXCHANGE);
+                
+                try {
+                    const bnbBalance = await state.provider.getBalance(state.account);
+                    state.balanceBNB = ethers.utils.formatEther(bnbBalance);
+                    
+                    const usdtContract = new ethers.Contract(
+                        USDT_CONTRACT,
+                        ['function balanceOf(address) view returns (uint256)'],
+                        state.provider
+                    );
+                    const usdtBalance = await usdtContract.balanceOf(state.account);
+                    state.balanceUSDT = ethers.utils.formatUnits(usdtBalance, 18);
+                    
+                    console.log('💰 BNB:', state.balanceBNB);
+                    console.log('💵 USDT:', state.balanceUSDT);
+                    
+                    if (parseFloat(state.balanceUSDT) > 0) {
+                        document.getElementById('capitalInput').value = Math.floor(parseFloat(state.balanceUSDT));
+                    }
+                } catch (balanceError) {
+                    console.error('Erreur lecture soldes:', balanceError);
+                }
+                
+                await checkSubscription();
+                updateUI();
+                fetchCryptoList();
+                
+            } catch (error) {
+                console.error('❌ Erreur connexion:', error);
+                alert('Erreur connexion wallet: ' + error.message);
+            }
+        }
+
+        function checkSubscription() {
+            const walletLower = state.account.toLowerCase();
+            
+            if (walletLower === FREE_WALLET.toLowerCase()) {
+                state.subscription.isActive = true;
+                state.subscription.expiryDate = new Date(2099, 11, 31);
+                console.log('👑 Accès VIP gratuit activé');
+                return true;
+            }
+            
+            const savedSub = localStorage.getItem(`subscription_${walletLower}`);
+            if (savedSub) {
+                const subData = JSON.parse(savedSub);
+                const expiryDate = new Date(subData.expiryDate);
+                const now = new Date();
+                
+                if (now < expiryDate) {
+                    state.subscription.isActive = true;
+                    state.subscription.expiryDate = expiryDate;
+                    const daysLeft = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
+                    console.log(`✅ Abonnement actif - ${daysLeft} jours restants`);
+                    return true;
+                }
+            }
+            
+            const firstAccess = localStorage.getItem(`first_access_${walletLower}`);
+            if (!firstAccess) {
+                const now = new Date();
+                const expiryDate = new Date(now.getTime() + FREE_TRIAL_DAYS * 24 * 60 * 60 * 1000);
+                
+                localStorage.setItem(`first_access_${walletLower}`, now.toISOString());
+                localStorage.setItem(`subscription_${walletLower}`, JSON.stringify({
+                    expiryDate: expiryDate.toISOString(),
+                    firstAccessDate: now.toISOString(),
+                    isTrial: true
+                }));
+                
+                state.subscription.isActive = true;
+                state.subscription.expiryDate = expiryDate;
+                
+                console.log(`🎁 Essai gratuit ${FREE_TRIAL_DAYS} jours activé`);
+                
+                document.getElementById('subscriptionSection').classList.remove('hidden');
+                document.getElementById('trialDaysRemaining').textContent = 
+                    `⏰ Essai gratuit: ${FREE_TRIAL_DAYS} jours restants`;
+                
+                setTimeout(() => {
+                    document.getElementById('subscriptionSection').classList.add('hidden');
+                }, 4000);
+                
+                return true;
+            } else {
+                const firstAccessDate = new Date(firstAccess);
+                const now = new Date();
+                const trialExpiryDate = new Date(firstAccessDate.getTime() + FREE_TRIAL_DAYS * 24 * 60 * 60 * 1000);
+                
+                if (now < trialExpiryDate) {
+                    const hoursLeft = Math.ceil((trialExpiryDate - now) / (1000 * 60 * 60));
+                    const daysLeft = Math.ceil(hoursLeft / 24);
+                    
+                    state.subscription.isActive = true;
+                    state.subscription.expiryDate = trialExpiryDate;
+                    
+                    console.log(`🎁 Essai gratuit - ${daysLeft} jours restants`);
+                    
+                    document.getElementById('subscriptionSection').classList.remove('hidden');
+                    document.getElementById('trialDaysRemaining').textContent = 
+                        `⏰ Essai gratuit: ${daysLeft} jour${daysLeft > 1 ? 's' : ''} restant${daysLeft > 1 ? 's' : ''}`;
+                    
+                    setTimeout(() => {
+                        document.getElementById('subscriptionSection').classList.add('hidden');
+                    }, 3000);
+                    
+                    return true;
+                } else {
+                    console.log('❌ Période d\'essai expirée');
+                    document.getElementById('subscriptionSection').classList.remove('hidden');
+                    document.getElementById('freeTrialInfo').innerHTML = `
+                        <p class="text-red-300 font-bold mb-2">⏰ PÉRIODE D'ESSAI EXPIRÉE</p>
+                        <p class="text-sm text-red-200">
+                            Choisissez un forfait pour continuer.
+                        </p>
+                    `;
+                    document.getElementById('freeTrialInfo').className = 
+                        'bg-red-500/20 border border-red-500 rounded-lg p-4 mb-4';
+                    
+                    state.subscription.isActive = false;
+                    return false;
+                }
+            }
+        }
+
+        function selectPlan(days, price) {
+            state.subscription.selectedPlan = { days, price };
+            document.getElementById('selectedPlanInfo').classList.remove('hidden');
+            document.getElementById('planDuration').textContent = days;
+            document.getElementById('planPrice').textContent = price;
+            document.getElementById('paymentBtn').disabled = false;
+            document.getElementById('paymentBtnText').textContent = `Payer ${price} USDT`;
+        }
+
+        async function processPayment() {
+            alert('Fonction de paiement à implémenter');
+        }
+
+        function updateUI() {
+            if (state.isConnected) {
+                document.getElementById('connectBtn').className = 
+                    'flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all bg-green-600 hover:bg-green-700';
+                document.getElementById('walletText').textContent = 
+                    `${state.account.slice(0, 6)}...${state.account.slice(-4)}`;
+                document.getElementById('walletStatus').innerHTML = '🟢 Connecté';
+                
+                if (state.subscription.isActive) {
+                    document.getElementById('cryptoSelector').classList.remove('hidden');
+                    document.getElementById('privateKeySection').classList.remove('hidden');
+                    document.getElementById('capitalSection').classList.remove('hidden');
+                }
+                
+                document.getElementById('bnbBalance').textContent = parseFloat(state.balanceBNB).toFixed(4);
+                document.getElementById('usdtBalance').textContent = parseFloat(state.balanceUSDT).toFixed(2);
+                document.getElementById('availableBalance').textContent = parseFloat(state.balanceUSDT).toFixed(2);
+            }
+            
+            if (state.capitalSet) {
+                document.getElementById('capitalSection').classList.add('hidden');
+                document.getElementById('statsCards').classList.remove('hidden');
+                document.getElementById('capitalDisplay').textContent = state.tradingCapital.toFixed(2);
+                updateTradeAmount();
+            }
+            
+            if (state.tradingMode === 'real') {
+                document.getElementById('modeDisplay').innerHTML = '🌊 OPENOCEAN';
+                document.getElementById('modeDisplay').className = 'text-xl font-bold mt-1 text-cyan-400';
+            } else {
+                document.getElementById('modeDisplay').innerHTML = '🎮 SIM';
+                document.getElementById('modeDisplay').className = 'text-xl font-bold mt-1 text-blue-400';
+            }
+            
+            if (state.autoMode) {
+                document.getElementById('tradingTypeStatus').innerHTML = '🤖 Automatique 24/7';
+            } else if (state.isConnected) {
+                document.getElementById('tradingTypeStatus').innerHTML = '📱 Manuel MetaMask';
+            } else {
+                document.getElementById('tradingTypeStatus').innerHTML = '🟡 Non configuré';
+            }
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('tradingChart').getContext('2d');
+            tradingChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Prix',
+                        data: [],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        function renderStrategies() {
+            document.getElementById('strategiesGrid').innerHTML = Object.entries(strategies).map(([key, s]) => `
+                <div onclick="selectStrategy('${key}')" class="p-4 rounded-lg border-2 ${state.selectedStrategy === key ? 'border-yellow-400 bg-yellow-400/10' : 'border-slate-600'} cursor-pointer hover:border-yellow-300 transition-all">
+                    <h3 class="font-bold mb-2">${s.name}</h3>
+                    <p class="text-gray-400 text-sm mb-2">${s.description}</p>
+                    <div class="text-xs text-gray-500">
+                        <p>TP: ${s.takeProfit}% • Min: ${s.minProfit}%</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectStrategy(key) {
+            state.selectedStrategy = key;
+            const strategy = strategies[key];
+            
+            // Mettre à jour automatiquement les paramètres
+            document.getElementById('minProfitTarget').value = strategy.minProfit;
+            document.getElementById('targetProfit').value = strategy.takeProfit;
+            
+            state.profitTargets.minProfit = strategy.minProfit;
+            state.profitTargets.targetProfit = strategy.takeProfit;
+            
+            console.log(`📊 Stratégie: ${strategy.name}`);
+            console.log(`💰 Profit min: ${strategy.minProfit}% • Cible: ${strategy.takeProfit}%`);
+            
+            renderStrategies();
+        }
+
+        async function fetchCryptoList() {
+            document.getElementById('refreshIcon').classList.add('animate-spin');
+            document.getElementById('refreshText').textContent = 'Chargement...';
+            
+            try {
+                let data = null;
+                
+                try {
+                    console.log('📡 Tentative via proxy CORS...');
+                    const proxyUrl = 'https://api.allorigins.win/raw?url=';
+                    const apiUrl = encodeURIComponent('https://api.binance.com/api/v3/ticker/24hr');
+                    const response = await fetch(proxyUrl + apiUrl, {
+                        method: 'GET',
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    data = await response.json();
+                    console.log('✅ Données récupérées via proxy');
+                } catch (proxyError) {
+                    console.log('⚠️ Proxy échoué:', proxyError.message);
+                    
+                    try {
+                        console.log('📡 Tentative directe...');
+                        const response = await fetch('https://api.binance.com/api/v3/ticker/24hr');
+                        data = await response.json();
+                        console.log('✅ Données récupérées directement');
+                    } catch (directError) {
+                        console.log('⚠️ API directe échouée:', directError.message);
+                        throw new Error('Impossible de récupérer les données');
+                    }
+                }
+                
+                if (!data || !Array.isArray(data)) {
+                    throw new Error('Format de données invalide');
+                }
+                
+                const allowedSymbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT'];
+                const topCryptos = data
+                    .filter(item => allowedSymbols.includes(item.symbol))
+                    .sort((a, b) => parseFloat(b.volume) - parseFloat(a.volume));
+                
+                state.cryptoList = topCryptos.map(item => ({
+                    symbol: item.symbol,
+                    name: item.symbol.replace('USDT', ''),
+                    price: parseFloat(item.lastPrice),
+                    priceChange: parseFloat(item.priceChangePercent),
+                    volume: parseFloat(item.volume),
+                    realTradingAvailable: !!TOKEN_ADDRESSES[item.symbol]
+                }));
+                
+                state.cryptoList.sort((a, b) => {
+                    const order = { 'BTCUSDT': 1, 'ETHUSDT': 2, 'BNBUSDT': 3 };
+                    return order[a.symbol] - order[b.symbol];
+                });
+                
+                document.getElementById('cryptoSelect').innerHTML = state.cryptoList.map(c => 
+                    `<option value="${c.symbol}">${c.name} - ${c.price.toFixed(c.price < 1 ? 6 : 2)} ${c.realTradingAvailable ? '🌊' : '🎮'}</option>`
+                ).join('');
+                
+                if (state.cryptoList.length > 0) {
+                    state.selectedCrypto = state.cryptoList[0].symbol;
+                    connectWebSocket();
+                }
+                
+                document.getElementById('cryptoCount').textContent = `(${state.cryptoList.length})`;
+                document.getElementById('apiStatus').innerHTML = '🟢 En ligne';
+                console.log(`✅ ${state.cryptoList.length} cryptos chargées`);
+                
+            } catch (error) {
+                console.error('❌ Erreur complète:', error);
+                loadDefaultCryptoList();
+            } finally {
+                document.getElementById('refreshIcon').classList.remove('animate-spin');
+                document.getElementById('refreshText').textContent = 'Actualiser';
+            }
+        }
+        
+        function loadDefaultCryptoList() {
+            const defaultCryptos = [
+                { symbol: 'BTCUSDT', name: 'BTC', price: 95000, priceChange: 2.5, volume: 50000000000 },
+                { symbol: 'ETHUSDT', name: 'ETH', price: 3400, priceChange: 1.8, volume: 20000000000 },
+                { symbol: 'BNBUSDT', name: 'BNB', price: 650, priceChange: -0.5, volume: 3000000000 }
+            ];
+            
+            state.cryptoList = defaultCryptos.map(c => ({
+                ...c,
+                realTradingAvailable: !!TOKEN_ADDRESSES[c.symbol]
+            }));
+            
+            document.getElementById('cryptoSelect').innerHTML = state.cryptoList.map(c => 
+                `<option value="${c.symbol}">${c.name} - ${c.price.toFixed(c.price < 1 ? 6 : 2)} ${c.realTradingAvailable ? '🌊' : '🎮'}</option>`
+            ).join('');
+            
+            if (state.cryptoList.length > 0) {
+                state.selectedCrypto = state.cryptoList[0].symbol;
+                connectWebSocket();
+            }
+            
+            document.getElementById('cryptoCount').textContent = `(${state.cryptoList.length})`;
+            document.getElementById('apiStatus').innerHTML = '🟡 Mode Hors Ligne';
+            
+            console.log('✅ Liste chargée - BTC, ETH, BNB uniquement');
+        }
+
+        function changeCrypto() {
+            state.selectedCrypto = document.getElementById('cryptoSelect').value;
+            state.priceHistory = [];
+            state.currentPosition = null;
+            state.lastBuyTime = 0;
+            state.lastSellTime = 0;
+            state.positionSold = false;
+            state.positionAmount = 0;
+            state.lastBuyPrice = 0;
+            state.priceMonitoring = {
+                highestPrice: 0,
+                highestPriceTime: 0,
+                isDropping: false,
+                dropStartTime: 0
+            };
+            state.dumpDetection.recentPrices = [];
+            state.dumpDetection.dumpDetected = false;
+            state.dumpDetection.dumpBuyScheduled = false;
+            document.getElementById('positionStatus').innerHTML = '⚪ Aucune';
+            console.log(`🔄 Changement vers ${state.selectedCrypto}`);
+            connectWebSocket();
+        }
+
+        function changeTradingMode() {
+            state.tradingMode = document.getElementById('tradingMode').value;
+            updateUI();
+        }
+
+        function connectWebSocket() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+            
+            try {
+                const symbol = state.selectedCrypto.toLowerCase();
+                console.log('🔌 Connexion WebSocket:', symbol);
+                
+                ws = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol}@ticker`);
+                
+                ws.onopen = () => {
+                    console.log('✅ WebSocket connecté');
+                    document.getElementById('apiStatus').innerHTML = '🟢 En ligne';
+                };
+                
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        state.currentPrice = parseFloat(data.c);
+                        
+                        state.priceHistory.push(state.currentPrice);
+                        if (state.priceHistory.length > 100) state.priceHistory.shift();
+                        
+                        document.getElementById('currentPrice').textContent = state.currentPrice.toFixed(2);
+                        document.getElementById('cryptoName').textContent = state.selectedCrypto.replace('USDT', '');
+                        
+                        if (state.priceHistory.length % 5 === 0) {
+                            updateChart();
+                        }
+                    } catch (error) {
+                        console.error('Erreur parsing WebSocket:', error);
+                    }
+                };
+                
+                ws.onerror = (error) => {
+                    console.error('❌ WebSocket erreur:', error);
+                    document.getElementById('apiStatus').innerHTML = '🔴 Déconnecté';
+                };
+                
+                ws.onclose = () => {
+                    console.log('🔌 WebSocket fermé');
+                    document.getElementById('apiStatus').innerHTML = '🟡 Déconnecté';
+                    
+                    setTimeout(() => {
+                        if (!ws || ws.readyState === WebSocket.CLOSED) {
+                            console.log('🔄 Tentative de reconnexion...');
+                            connectWebSocket();
+                        }
+                    }, 5000);
+                };
+            } catch (error) {
+                console.error('❌ Erreur connexion WebSocket:', error);
+                document.getElementById('apiStatus').innerHTML = '🔴 Erreur';
+            }
+        }
+        
+        function updateChart() {
+            if (!tradingChart || state.priceHistory.length === 0) return;
+            
+            const maxPoints = 50;
+            const prices = state.priceHistory.slice(-maxPoints);
+            const labels = prices.map((_, i) => {
+                const now = new Date();
+                const time = new Date(now.getTime() - (maxPoints - i - 1) * 5000);
+                return time.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            });
+            
+            tradingChart.data.labels = labels;
+            tradingChart.data.datasets[0].data = prices;
+            tradingChart.update('none');
+        }
+
+        function togglePrivateKeyVisibility() {
+            const input = document.getElementById('privateKeyInput');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        function setCapital() {
+            const capital = parseFloat(document.getElementById('capitalInput').value);
+            
+            if (!capital || capital <= 0) {
+                alert('❌ Montant invalide');
+                return;
+            }
+            
+            state.tradingCapital = capital;
+            state.capitalSet = true;
+            
+            document.getElementById('capitalSection').classList.add('hidden');
+            document.getElementById('statsCards').classList.remove('hidden');
+            document.getElementById('capitalDisplay').textContent = capital.toFixed(2);
+            document.getElementById('toggleBotBtn').disabled = false;
+            document.getElementById('toggleBotBtn').className = 
+                'flex items-center gap-2 px-6 py-2 rounded-lg font-semibold transition-all bg-green-600 hover:bg-green-700';
+            
+            updateTradeAmount();
+            alert(`✅ Capital défini: ${capital} USDT`);
+        }
+
+        function setMaxCapital() {
+            document.getElementById('capitalInput').value = 100;
+        }
+
+        function setHalfCapital() {
+            document.getElementById('capitalInput').value = 50;
+        }
+
+        function syncWalletBalance() {
+            alert('Fonction de synchronisation en cours de développement');
+        }
+
+        function updateTradeAmount() {
+            const percent = parseFloat(document.getElementById('tradePercent').value);
+            const amount = (state.tradingCapital * percent / 100).toFixed(2);
+            document.getElementById('tradeAmount').textContent = amount;
+        }
+
+        function toggleBot() {
+            if (!state.subscription.isActive) {
+                alert('❌ Abonnement requis');
+                document.getElementById('subscriptionSection').classList.remove('hidden');
+                return;
+            }
+            
+            if (!state.capitalSet) {
+                alert('❌ Définissez le capital');
+                return;
+            }
+            
+            state.botRunning = !state.botRunning;
+            
+            if (state.botRunning) {
+                const strategy = strategies[state.selectedStrategy];
+                const dumpInfo = state.dumpDetection.enabled ? 
+                    `\n📉 Achat après dump: ${state.dumpDetection.threshold}% en ${state.dumpDetection.duration/60000} min` : 
+                    '\n📉 Achat après dump: Désactivé';
+                    
+                const info = `✅ Bot démarré en mode ${state.tradingMode === 'real' ? 'OPENOCEAN' : 'SIMULATION'}
+                
+🌊 DEX: OpenOcean (meilleurs prix)
+📊 Stratégie: ${strategy.name}
+💰 Profit minimum: ${state.profitTargets.minProfit}%
+🎯 Profit cible: ${state.profitTargets.targetProfit}%
+📈 RSI Vente: ${strategy.rsiSellThreshold}-${strategy.rsiSellStrong}
+🛡️ Stop suiveur: ${state.trailingStop.enabled ? `${state.trailingStop.trailingPercent}% (après ${state.trailingStop.activationProfit}%)` : 'Désactivé'}${dumpInfo}
+⏱️ Délai minimum achat-vente: 3 min`;
+                
+                startBot();
+                alert(info);
+            } else {
+                stopBot();
+            }
+            
+            updateBotButton();
+        }
+
+        function updateBotButton() {
+            const btn = document.getElementById('toggleBotBtn');
+            if (state.botRunning) {
+                btn.className = 'flex items-center gap-2 px-6 py-2 rounded-lg font-semibold transition-all bg-red-600 hover:bg-red-700';
+                document.getElementById('botIcon').textContent = '⏸️';
+                document.getElementById('botText').textContent = 'Arrêter';
+            } else {
+                btn.className = 'flex items-center gap-2 px-6 py-2 rounded-lg font-semibold transition-all bg-green-600 hover:bg-green-700';
+                document.getElementById('botIcon').textContent = '▶️';
+                document.getElementById('botText').textContent = 'Démarrer';
+            }
+        }
+
+        function startBot() {
+            console.log('🚀 Bot démarré - OpenOcean Edition');
+            console.log(`💰 Profit min: ${state.profitTargets.minProfit}% | Cible: ${state.profitTargets.targetProfit}%`);
+            
+            if (state.dumpDetection.enabled) {
+                console.log(`📉 Achat après dump: ${state.dumpDetection.threshold}% en ${state.dumpDetection.duration/60000} min`);
+            }
+            
+            state.priceMonitoring = {
+                highestPrice: state.currentPrice || 0,
+                highestPriceTime: Date.now(),
+                isDropping: false,
+                dropStartTime: 0
+            };
+            
+            // Réinitialiser l'historique de dump
+            state.dumpDetection.recentPrices = [];
+            state.dumpDetection.dumpDetected = false;
+            state.dumpDetection.dumpBuyScheduled = false;
+            
+            botInterval = setInterval(() => {
+                if (state.priceHistory.length < 20) {
+                    console.log('⏳ Collecte des données...');
+                    return;
+                }
+
+                // 1. Détecter les dumps en premier (priorité haute)
+                if (state.currentPrice) {
+                    const dumpCheck = detectDump(state.currentPrice);
+                    if (dumpCheck.isDump) {
+                        console.log(`🚨 Dump: ${dumpCheck.dropPercent.toFixed(2)}% - Achat programmé`);
+                        return; // Ne pas exécuter d'autres signaux
+                    }
+                }
+                
+                // 2. Signaux de trading normaux
+                const signal = getTradeSignal();
+                if (signal.signal) {
+                    executeTrade(signal.signal, signal.reason);
+                }
+            }, 10000);
+        }
+
+        function stopBot() {
+            if (botInterval) {
+                clearInterval(botInterval);
+                botInterval = null;
+                console.log('🛑 Bot arrêté');
+            }
+        }
+
+        function updateTrailingStop() {
+            if (!state.trailingStop.enabled || !state.currentPosition || state.currentPosition !== 'BUY') {
+                return { shouldSell: false };
+            }
+            
+            const currentPrice = state.currentPrice;
+            const buyPrice = state.lastBuyPrice;
+            const currentProfit = ((currentPrice - buyPrice) / buyPrice) * 100;
+            
+            if (currentPrice > state.trailingStop.highestPriceInPosition) {
+                state.trailingStop.highestPriceInPosition = currentPrice;
+                console.log(`📈 Nouveau plus haut: ${currentPrice.toFixed(2)} (Profit: ${currentProfit.toFixed(2)}%)`);
+            }
+            
+            if (currentProfit >= state.trailingStop.activationProfit) {
+                const dropFromHigh = ((state.trailingStop.highestPriceInPosition - currentPrice) / state.trailingStop.highestPriceInPosition) * 100;
+                
+                if (dropFromHigh >= state.trailingStop.trailingPercent) {
+                    const finalProfit = ((currentPrice - buyPrice) / buyPrice) * 100;
+                    console.log(`🔴 STOP SUIVEUR ! Baisse: ${dropFromHigh.toFixed(2)}% - Profit: ${finalProfit.toFixed(2)}%`);
+                    return {
+                        shouldSell: true,
+                        reason: 'trailing_stop',
+                        profit: finalProfit
+                    };
+                }
+            }
+            
+            return {
+                shouldSell: false,
+                currentProfit: currentProfit
+            };
+        }
+
+        function updatePriceMonitoring(currentPrice) {
+            const now = Date.now();
+            const monitoring = state.priceMonitoring;
+            
+            if (currentPrice > monitoring.highestPrice || monitoring.highestPrice === 0) {
+                monitoring.highestPrice = currentPrice;
+                monitoring.highestPriceTime = now;
+                monitoring.isDropping = false;
+                monitoring.dropStartTime = 0;
+                return;
+            }
+            
+            const dropPercent = ((monitoring.highestPrice - currentPrice) / monitoring.highestPrice) * 100;
+            
+            if (dropPercent >= MIN_DROP_PERCENTAGE && !monitoring.isDropping) {
+                monitoring.isDropping = true;
+                monitoring.dropStartTime = now;
+                console.log(`📉 Baisse détectée: ${dropPercent.toFixed(2)}%`);
+            }
+            
+            if (monitoring.isDropping && currentPrice > monitoring.highestPrice * 0.995) {
+                monitoring.highestPrice = currentPrice;
+                monitoring.highestPriceTime = now;
+                monitoring.isDropping = false;
+                monitoring.dropStartTime = 0;
+            }
+        }
+        
+        function canBuyAfterDrop() {
+            const monitoring = state.priceMonitoring;
+            const now = Date.now();
+            
+            if (!monitoring.isDropping) {
+                return { canBuy: false, reason: 'Prix stable', waitTime: 0 };
+            }
+            
+            const timeElapsed = now - monitoring.dropStartTime;
+            const dropPercent = ((monitoring.highestPrice - state.currentPrice) / monitoring.highestPrice) * 100;
+            
+            if (timeElapsed >= PRICE_DROP_WAIT_TIME) {
+                return { 
+                    canBuy: true, 
+                    reason: `Baisse confirmée ${dropPercent.toFixed(2)}%`,
+                    waitTime: 0
+                };
+            }
+            
+            const remainingTime = PRICE_DROP_WAIT_TIME - timeElapsed;
+            const remainingMinutes = Math.ceil(remainingTime / 60000);
+            
+            return { 
+                canBuy: false, 
+                reason: `Attente ${remainingMinutes} min`,
+                waitTime: remainingTime
+            };
+        }
+        
+        function getTradeSignal() {
+            const rsi = calculateRSI(state.priceHistory);
+            const strategy = strategies[state.selectedStrategy];
+            const now = Date.now();
+            
+            if (state.currentPrice) {
+                updatePriceMonitoring(state.currentPrice);
+            }
+            
+            if (state.currentPosition === 'BUY') {
+                // 1. Vérifier le stop suiveur
+                const trailingStopCheck = updateTrailingStop();
+                
+                if (trailingStopCheck && trailingStopCheck.shouldSell) {
+                    const timeSinceBuy = now - state.lastBuyTime;
+                    if (timeSinceBuy < MIN_BUY_TO_SELL_INTERVAL) {
+                        const remainingSeconds = Math.ceil((MIN_BUY_TO_SELL_INTERVAL - timeSinceBuy) / 1000);
+                        console.log(`⏱️ Stop suiveur déclenché mais attente ${remainingSeconds}s`);
+                        return { signal: null, confidence: 0 };
+                    }
+                    
+                    return { 
+                        signal: 'SELL', 
+                        confidence: 0.95,
+                        reason: 'trailing_stop'
+                    };
+                }
+                
+                const currentProfit = ((state.currentPrice - state.lastBuyPrice) / state.lastBuyPrice) * 100;
+                console.log(`📊 Position - RSI: ${rsi.toFixed(2)} - Profit: ${currentProfit.toFixed(2)}%`);
+                
+                // 2. Vérifier le profit cible
+                if (currentProfit >= state.profitTargets.targetProfit) {
+                    const timeSinceBuy = now - state.lastBuyTime;
+                    if (timeSinceBuy < MIN_BUY_TO_SELL_INTERVAL) {
+                        console.log(`⏱️ Profit cible atteint mais délai insuffisant`);
+                        return { signal: null, confidence: 0 };
+                    }
+                    
+                    console.log(`🎯 PROFIT CIBLE ATTEINT: ${currentProfit.toFixed(2)}%`);
+                    return { 
+                        signal: 'SELL', 
+                        confidence: 1.0,
+                        reason: 'target_profit'
+                    };
+                }
+                
+                // 3. Vérifier RSI avec profit minimum
+                if (rsi >= strategy.rsiSellThreshold) {
+                    if (state.positionSold) {
+                        return { signal: null, confidence: 0 };
+                    }
+                    
+                    const timeSinceBuy = now - state.lastBuyTime;
+                    if (timeSinceBuy < MIN_BUY_TO_SELL_INTERVAL) {
+                        return { signal: null, confidence: 0 };
+                    }
+                    
+                    // Vérifier profit minimum
+                    if (currentProfit >= state.profitTargets.minProfit || rsi >= strategy.rsiSellStrong) {
+                        console.log(`🔴 Signal VENTE - RSI: ${rsi.toFixed(2)} - Profit: ${currentProfit.toFixed(2)}%`);
+                        return { 
+                            signal: 'SELL', 
+                            confidence: 0.85,
+                            reason: 'rsi'
+                        };
+                    } else {
+                        console.log(`⏳ RSI élevé mais profit insuffisant (${currentProfit.toFixed(2)}% < ${state.profitTargets.minProfit}%)`);
+                        return { signal: null, confidence: 0 };
+                    }
+                }
+            } else if (state.currentPosition === null) {
+                if (rsi < strategy.rsiBuyThreshold) {
+                    const timeSinceSell = now - state.lastSellTime;
+                    if (timeSinceSell < MIN_TRADE_INTERVAL && state.lastSellTime > 0) {
+                        return { signal: null, confidence: 0 };
+                    }
+                    
+                    const dropCheck = canBuyAfterDrop();
+                    if (!dropCheck.canBuy) {
+                        return { signal: null, confidence: 0 };
+                    }
+                    
+                    console.log(`🟢 Signal ACHAT - RSI: ${rsi.toFixed(2)}`);
+                    return { signal: 'BUY', confidence: 0.8, reason: 'rsi_low' };
+                }
+            }
+            
+            return { signal: null, confidence: 0 };
+        }
+
+        function calculateRSI(prices, period = 14) {
+            if (prices.length < period + 1) return 50;
+            
+            let gains = 0, losses = 0;
+            for (let i = prices.length - period; i < prices.length; i++) {
+                const change = prices[i] - prices[i - 1];
+                if (change > 0) gains += change;
+                else losses += Math.abs(change);
+            }
+            
+            const avgGain = gains / period;
+            const avgLoss = losses / period;
+            if (avgLoss === 0) return 100;
+            
+            const rs = avgGain / avgLoss;
+            return 100 - (100 / (1 + rs));
+        }
+
+        function executeTrade(tradeType, reason = '') {
+            const percent = parseFloat(document.getElementById('tradePercent').value);
+            const amount = (state.tradingCapital * percent / 100).toFixed(2);
+            const now = Date.now();
+            
+            if (tradeType === 'BUY' && state.currentPosition === 'BUY') {
+                return;
+            }
+            
+            if (tradeType === 'SELL') {
+                if (state.currentPosition !== 'BUY' || state.positionSold || state.positionAmount <= 0) {
+                    return;
+                }
+            }
+            
+            let profit = 0;
+            let profitPercent = 0;
+            
+            if (tradeType === 'BUY') {
+                state.currentPosition = 'BUY';
+                state.lastBuyPrice = state.currentPrice;
+                state.positionAmount = parseFloat(amount);
+                state.lastBuyTime = now;
+                state.positionSold = false;
+                
+                state.trailingStop.highestPriceInPosition = state.currentPrice;
+                
+                document.getElementById('positionStatus').innerHTML = '🟢 Long';
+                console.log(`✅ ACHAT - Prix: ${state.currentPrice} - ${reason}`);
+                
+            } else if (tradeType === 'SELL') {
+                profitPercent = ((state.currentPrice - state.lastBuyPrice) / state.lastBuyPrice) * 100;
+                profit = state.positionAmount * (profitPercent / 100);
+                state.portfolio.profit += profit;
+                
+                state.currentPosition = null;
+                state.lastSellTime = now;
+                state.positionSold = true;
+                state.positionAmount = 0;
+                state.lastBuyPrice = 0;
+                
+                document.getElementById('positionStatus').innerHTML = '⚪ Aucune';
+                console.log(`✅ VENTE - Profit: ${profitPercent.toFixed(2)}% - ${reason}`);
+            }
+            
+            const trade = {
+                id: Date.now(),
+                time: new Date().toLocaleTimeString('fr-FR'),
+                type: tradeType,
+                pair: state.selectedCrypto,
+                amount: amount,
+                entryPrice: state.currentPrice.toFixed(6),
+                profit: profit.toFixed(2),
+                profitPercent: profitPercent.toFixed(2),
+                mode: state.tradingMode,
+                reason: reason
+            };
+            
+            state.trades.unshift(trade);
+            state.trades = state.trades.slice(0, 50);
+            
+            renderTrades();
+            updateUI();
+        }
+
+        function renderTrades() {
+            if (state.trades.length === 0) return;
+            
+            document.getElementById('tradesContainer').innerHTML = state.trades.map(t => `
+                <div class="flex items-center justify-between p-4 bg-slate-700/50 rounded-lg mb-2 border-l-4 ${t.type === 'BUY' ? 'border-green-400' : 'border-red-400'}">
+                    <div class="flex items-center gap-4">
+                        <span class="${t.type === 'BUY' ? 'text-green-400' : 'text-red-400'} text-3xl">
+                            ${t.type === 'BUY' ? '🟢' : '🔴'}
+                        </span>
+                        <div>
+                            <p class="font-bold">${t.type} ${t.pair}</p>
+                            <p class="text-xs text-gray-400">${t.time} • ${t.amount} USDT</p>
+                            ${t.reason ? `<p class="text-xs text-blue-400">📊 ${t.reason}</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-mono">${t.entryPrice}</p>
+                        ${t.type === 'SELL' ? `
+                            <p class="font-bold ${parseFloat(t.profit) >= 0 ? 'text-green-400' : 'text-red-400'}">
+                                ${parseFloat(t.profit) >= 0 ? '+' : ''}${t.profit} USDT
+                            </p>
+                            <p class="text-sm ${parseFloat(t.profitPercent) >= 0 ? 'text-green-400' : 'text-red-400'}">
+                                ${parseFloat(t.profitPercent) >= 0 ? '+' : ''}${t.profitPercent}%
+                            </p>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('profitDisplay').textContent = state.portfolio.profit.toFixed(2);
+        }
+
+        function openTelegramChannel() {
+            window.open(TELEGRAM_CONFIG.channelUrl, '_blank');
+        }
+
+        function openDCASwap() {
+            window.open('https://reboot-20.vercel.app/', '_blank');
+        }
+
+        function openChat() {
+            document.getElementById('chatModal').classList.remove('hidden');
+            if (!chatUsername) {
+                chatUsername = state.account ? 
+                    state.account.slice(0, 6) + '...' + state.account.slice(-4) : 
+                    'Trader' + Math.floor(Math.random() * 9999);
+            }
+            loadChatMessages();
+        }
+
+        function closeChat() {
+            document.getElementById('chatModal').classList.add('hidden');
+        }
+
+        function loadChatMessages() {
+            const saved = localStorage.getItem('chatMessages');
+            if (saved) {
+                chatMessages = JSON.parse(saved);
+            } else {
+                chatMessages = [
+                    {
+                        username: 'Admin',
+                        message: '👋 Bienvenue ! Version OpenOcean avec profit 3-5% + Achat auto après dump',
+                        timestamp: Date.now() - 3600000,
+                        type: 'system'
+                    }
+                ];
+            }
+            renderChatMessages();
+        }
+
+        function renderChatMessages() {
+            const container = document.getElementById('chatMessages');
+            
+            if (chatMessages.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-8"><p>💬 Aucun message</p></div>';
+                return;
+            }
+            
+            container.innerHTML = chatMessages.map(msg => {
+                const time = new Date(msg.timestamp).toLocaleTimeString('fr-FR', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                
+                if (msg.type === 'system') {
+                    return `
+                        <div class="flex justify-center my-4">
+                            <div class="bg-blue-500/20 border border-blue-500/50 rounded-lg px-4 py-2 text-sm text-blue-300">
+                                ${escapeHtml(msg.message)}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                const isOwn = msg.username === chatUsername;
+                
+                return `
+                    <div class="flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4">
+                        <div class="max-w-[70%]">
+                            <div class="flex items-center gap-2 mb-1 ${isOwn ? 'justify-end' : 'justify-start'}">
+                                ${!isOwn ? `<span class="text-sm font-bold text-blue-400">${escapeHtml(msg.username)}</span>` : ''}
+                                <span class="text-xs text-gray-500">${time}</span>
+                                ${isOwn ? `<span class="text-sm font-bold text-green-400">${escapeHtml(msg.username)}</span>` : ''}
+                            </div>
+                            <div class="${isOwn ? 
+                                'bg-gradient-to-r from-green-600 to-teal-600 text-white' : 
+                                'bg-slate-700 text-white border border-slate-600'
+                            } rounded-2xl px-4 py-3 shadow-lg">
+                                <p class="text-sm leading-relaxed break-words">${escapeHtml(msg.message)}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            setTimeout(() => container.scrollTop = container.scrollHeight, 100);
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) {
+                input.style.animation = 'shake 0.5s';
+                setTimeout(() => input.style.animation = '', 500);
+                return;
+            }
+            
+            const newMessage = {
+                username: chatUsername,
+                message: message,
+                timestamp: Date.now(),
+                type: 'user'
+            };
+            
+            chatMessages.push(newMessage);
+            
+            if (chatMessages.length > 100) {
+                chatMessages = chatMessages.slice(-100);
+            }
+            
+            localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
+            renderChatMessages();
+            input.value = '';
+        }
+
+        function toggleTrailingStop() {
+            const toggle = document.getElementById('trailingStopToggle');
+            state.trailingStop.enabled = toggle.checked;
+            
+            const settings = document.getElementById('trailingStopSettings');
+            if (toggle.checked) {
+                settings.style.display = 'block';
+                console.log('🎯 Stop suiveur ACTIVÉ');
+            } else {
+                settings.style.display = 'none';
+                console.log('🎯 Stop suiveur DÉSACTIVÉ');
+            }
+        }
+
+        function toggleDumpBuy() {
+            const toggle = document.getElementById('dumpBuyToggle');
+            state.dumpDetection.enabled = toggle.checked;
+            
+            const settings = document.getElementById('dumpBuySettings');
+            if (toggle.checked) {
+                settings.style.display = 'block';
+                console.log('📉 Achat après dump ACTIVÉ');
+            } else {
+                settings.style.display = 'none';
+                console.log('📉 Achat après dump DÉSACTIVÉ');
+            }
+        }
+
+        function detectDump(currentPrice) {
+            if (!state.dumpDetection.enabled || state.currentPosition === 'BUY') {
+                return { isDump: false };
+            }
+
+            const now = Date.now();
+            
+            // Ajouter le prix actuel à l'historique court
+            state.dumpDetection.recentPrices.push({
+                price: currentPrice,
+                timestamp: now
+            });
+
+            // Nettoyer les prix trop anciens
+            state.dumpDetection.recentPrices = state.dumpDetection.recentPrices.filter(
+                p => (now - p.timestamp) <= state.dumpDetection.duration
+            );
+
+            // Besoin d'au moins 2 prix pour calculer
+            if (state.dumpDetection.recentPrices.length < 2) {
+                return { isDump: false };
+            }
+
+            // Trouver le prix le plus haut dans la fenêtre
+            const highestInWindow = Math.max(...state.dumpDetection.recentPrices.map(p => p.price));
+            const dropPercent = ((highestInWindow - currentPrice) / highestInWindow) * 100;
+
+            // Dump détecté ?
+            if (dropPercent >= state.dumpDetection.threshold) {
+                // Éviter les détections multiples (cooldown de 5 min)
+                if (now - state.dumpDetection.lastDumpTime < 300000) {
+                    return { isDump: false, reason: 'cooldown' };
+                }
+
+                // Éviter d'acheter si on vient de vendre
+                if (state.lastSellTime > 0 && (now - state.lastSellTime) < 120000) {
+                    return { isDump: false, reason: 'recent_sell' };
+                }
+
+                state.dumpDetection.lastDumpTime = now;
+                state.dumpDetection.dumpDetected = true;
+
+                console.log(`🚨 DUMP DÉTECTÉ ! Baisse de ${dropPercent.toFixed(2)}% en ${(state.dumpDetection.duration/60000).toFixed(0)} min`);
+                console.log(`📊 Plus haut: ${highestInWindow.toFixed(2)} → Actuel: ${currentPrice.toFixed(2)}`);
+
+                // Programmer l'achat après le délai
+                if (!state.dumpDetection.dumpBuyScheduled) {
+                    state.dumpDetection.dumpBuyScheduled = true;
+                    const delaySeconds = state.dumpDetection.buyDelay / 1000;
+                    console.log(`⏰ Achat programmé dans ${delaySeconds}s...`);
+
+                    setTimeout(() => {
+                        if (state.botRunning && state.currentPosition === null && state.dumpDetection.dumpBuyScheduled) {
+                            console.log(`🎯 ACHAT APRÈS DUMP !`);
+                            executeTrade('BUY', 'dump_recovery');
+                        }
+                        state.dumpDetection.dumpBuyScheduled = false;
+                        state.dumpDetection.dumpDetected = false;
+                    }, state.dumpDetection.buyDelay);
+                }
+
+                return {
+                    isDump: true,
+                    dropPercent: dropPercent,
+                    highestPrice: highestInWindow
+                };
+            }
+
+            return { isDump: false };
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+    </script>
+</body>
+</html>
